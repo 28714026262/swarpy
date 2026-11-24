@@ -7,6 +7,13 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.*;
 
 class MappingEngineTest {
+    @Test void englishVerbsUseWholeWordsAndKeepOriginalCase() {
+        var source=new Catalog.Word("S_en","create","动词","英文词","通用词","手填","启用",1,"");
+        var target=new Catalog.Word("R_en","revise","动词","英文词","通用词","词库","启用",1,"");
+        var engine=new MappingEngine();var plan=engine.plan(List.of("CREATE Create recreate"),library(List.of(source),List.of(target)));
+        String changed=engine.redact("CREATE Create recreate",plan.mappings(),"B","K_en");
+        assertThat(changed).isEqualTo("REVISE Revise recreate");assertThat(engine.restore(changed,plan.mappings(),"K_en")).isEqualTo("CREATE Create recreate");
+    }
     @Test void structuredMatchingAllowsSentencePunctuationWithoutSplittingLargerValues() {
         var email=w("S_email","a@example.com","邮箱");var ip=w("S_ip","192.0.2.1","IPv4");var url=w("S_url","https://example.com/","网址");
         assertThat(Matcher.find("Email: a@example.com.",List.of(email))).hasSize(1);
@@ -26,9 +33,9 @@ class MappingEngineTest {
         var person=new Catalog.Word("R_p","赵宁远","专有名词","中文词","人名","词库","启用",1,"");
         var engine=new MappingEngine();
         assertThat(engine.plan(List.of("原医院"),library(List.of(source),List.of(person,facility))).mappings()).extracting(MappingEngine.Mapping::replacement).containsExactly("青溪馆");
-        assertThat(WordTypes.role("订单编号","数字代号")).isEqualTo("编号");
+        assertThat(WordTypes.role("订单编号","数字代号")).isEqualTo("标识");
         assertThat(WordTypes.role("学校名","中文词")).isEqualTo("设施名");
-        assertThat(WordTypes.ROLES).hasSize(10);
+        assertThat(WordTypes.ROLES).hasSize(7);
     }
     @Test void structuredValuesKeepTheirFormatAndDoNotUseInvalidDates() {
         var source=new Catalog.Word("S_d","2026-01-01","名词","日期","时间","手填","启用",1,"");

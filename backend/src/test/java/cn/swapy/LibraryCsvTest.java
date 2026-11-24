@@ -6,6 +6,13 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.*;
 
 class LibraryCsvTest {
+    @Test void sourceNoticesTravelWithTheSingleCsv() {
+        var word=new Catalog.Word("R_1","revise","动词","英文词","通用词","WordNet:3.0","启用",1,"");
+        var library=new Catalog.Library("swapy-library",1,"test",1,List.of(),List.of(word));
+        byte[] data=LibraryCsv.encode(library);
+        assertThat(new String(data,StandardCharsets.UTF_8)).contains("license,WordNet-3.0,").contains("WordNet 3.0 Copyright");
+        assertThat(LibraryCsv.decode(data)).isEqualTo(library);
+    }
     @Test void existingLargeMetadataStillRoundTrips() {
         var word=new Catalog.Word("R_1","林舟","名词","中文词","事物名","来源","启用",1,"x".repeat(4097));
         var library=new Catalog.Library("swapy-library",1,"test",1,List.of(),List.of(word));

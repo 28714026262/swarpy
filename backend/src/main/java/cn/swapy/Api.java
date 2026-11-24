@@ -16,7 +16,8 @@ import java.util.*;
 public class Api {
     private final TaskService tasks;private final Catalog catalog;private final Roots roots;private final PackageService packages;private final SecurityFilter security;
     private final GitCatalog git;
-    public Api(TaskService tasks,Catalog catalog,Roots roots,PackageService packages,SecurityFilter security,GitCatalog git){this.tasks=tasks;this.catalog=catalog;this.roots=roots;this.packages=packages;this.security=security;this.git=git;}
+    private final CatalogQuery catalogQuery;
+    public Api(TaskService tasks,Catalog catalog,Roots roots,PackageService packages,SecurityFilter security,GitCatalog git){this.tasks=tasks;this.catalog=catalog;this.roots=roots;this.packages=packages;this.security=security;this.git=git;this.catalogQuery=new CatalogQuery(tasks.repo.db);}
     @GetMapping("/session") public Object session(){return Map.of("token",security.token,"backend","java-sqlite","parallelism",4,"nativeSelection",false,"pid",ProcessHandle.current().pid(),"dataDirectory",tasks.repo.db.data.toString());}
     @GetMapping("/roots") public Object roots(){return roots.configured().entrySet().stream().map(e->Map.of("id",e.getKey(),"name",e.getValue().toString())).toList();}
     @GetMapping("/roots/{id}/entries") public Object entries(@PathVariable String id,@RequestParam(defaultValue="")String path){return roots.entries(id,path);}
@@ -45,6 +46,11 @@ public class Api {
         return ResponseEntity.ok().eTag(catalogTag(Json.write(List.of(library.lineage(),library.version())))).body(body);
     }
     private String catalogTag(String revision){return "\""+PackageService.sha((revision+":"+git.publisher).getBytes(StandardCharsets.UTF_8))+"\"";}
+    @GetMapping("/catalog/summary") public ResponseEntity<?> catalogSummary(@RequestHeader(value="If-None-Match",required=false)String cached) {
+        var summary=catalogQuery.summary();String tag=catalogTag(Json.write(List.of(summary.get("lineage"),summary.get("version")))+":summary");
+        if(tag.equals(cached))return ResponseEntity.status(304).eTag(tag).build();summary.put("readOnly",!git.publisher);return ResponseEntity.ok().eTag(tag).body(summary);
+    }
+    @GetMapping("/catalog/entries") public Object searchLibrary(@RequestParam(defaultValue="pool")String kind,@RequestParam(defaultValue="")String q,@RequestParam(defaultValue="")String role,@RequestParam(defaultValue="")String pos,@RequestParam(defaultValue="all")String language,@RequestParam(defaultValue="启用")String status,@RequestParam(defaultValue="1")int page,@RequestParam(defaultValue="12")int pageSize){return catalogQuery.search(new CatalogQuery.Options(kind,q,role,pos,language,status,page,pageSize));}
     @PostMapping("/catalog/entries") public Object add(@RequestBody Map<String,String> entry){return git.add(entry.get("kind"),entry.get("word"),entry.getOrDefault("pos","专有名词"),entry.getOrDefault("form","中文词"),WordTypes.role(entry.get("role"),entry.getOrDefault("form","中文词")),entry.getOrDefault("family",""));}
     @PostMapping("/catalog/entries/{id}/deprecations") public Object deprecate(@PathVariable String id){return git.deprecate(id);}
     @PostMapping("/catalog/sync-jobs") public Object syncCatalog(){git.retryPending();return git.sync();}

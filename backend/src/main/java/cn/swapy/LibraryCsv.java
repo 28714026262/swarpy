@@ -11,6 +11,8 @@ public final class LibraryCsv {
         StringBuilder out=new StringBuilder();row(out,List.of("swapy-library-csv","1",library.lineage(),String.valueOf(library.version())));row(out,HEADER);
         for(String kind:List.of("sensitive","pool"))for(var w:kind.equals("pool")?library.pool():library.sensitive())
             row(out,List.of(kind,w.id(),w.word(),w.pos(),w.form(),w.role(),w.source(),w.status(),String.valueOf(w.introducedVersion()),w.family()==null?"\\N":w.family().startsWith("\\")?"\\"+w.family():w.family()));
+        if(java.util.stream.Stream.concat(library.sensitive().stream(),library.pool().stream()).anyMatch(w->w.source().startsWith("jieba:")))notice(out,"jieba-MIT","/jieba-LICENSE.txt");
+        if(java.util.stream.Stream.concat(library.sensitive().stream(),library.pool().stream()).anyMatch(w->w.source().equals("WordNet:3.0")))notice(out,"WordNet-3.0","/wordnet-LICENSE.txt");
         return out.toString().getBytes(StandardCharsets.UTF_8);
     }
     public static Catalog.Library decode(byte[] data) {
@@ -22,6 +24,7 @@ public final class LibraryCsv {
             var sensitive=new ArrayList<Catalog.Word>();var pool=new ArrayList<Catalog.Word>();
             for(int i=2;i<rows.size();i++) {
                 var r=rows.get(i);if(r.size()==1&&r.get(0).isEmpty())continue;
+                if(r.size()==3&&r.get(0).equals("license")&&Set.of("jieba-MIT","WordNet-3.0").contains(r.get(1))&&!r.get(2).isBlank())continue;
                 if(r.size()!=10||!Set.of("pool","sensitive").contains(r.get(0)))throw new IllegalArgumentException();
                 String family=r.get(9).equals("\\N")?null:r.get(9).startsWith("\\\\")?r.get(9).substring(1):r.get(9);
                 var word=new Catalog.Word(r.get(1),r.get(2),r.get(3),r.get(4),r.get(5),r.get(6),r.get(7),Integer.parseInt(r.get(8)),family);
@@ -34,6 +37,11 @@ public final class LibraryCsv {
         for(int i=0;i<values.size();i++){if(i>0)out.append(',');String s=values.get(i);boolean quote=s.indexOf(',')>=0||s.indexOf('"')>=0||s.indexOf('\r')>=0||s.indexOf('\n')>=0;
             if(quote)out.append('"').append(s.replace("\"","\"\"")).append('"');else out.append(s);}
         out.append('\n');
+    }
+    private static void notice(StringBuilder out,String id,String resource) {
+        try(var input=LibraryCsv.class.getResourceAsStream(resource)){
+            if(input==null)throw new Problem("LICENSE_RESOURCE_MISSING");row(out,List.of("license",id,new String(input.readAllBytes(),StandardCharsets.UTF_8)));
+        }catch(java.io.IOException e){throw new Problem("LICENSE_RESOURCE_MISSING");}
     }
     private static List<List<String>> parse(String raw) {
         var rows=new ArrayList<List<String>>();int i=0;

@@ -8,6 +8,7 @@ import java.net.URI;
 import java.net.http.*;
 import java.nio.file.*;
 import java.util.Map;
+import java.util.List;
 import static org.assertj.core.api.Assertions.*;
 
 class ApiTest {
@@ -41,6 +42,12 @@ class ApiTest {
             String multipart="--"+boundary+"\r\nContent-Disposition: form-data; name=\"file\"; filename=\"library.csv\"\r\nContent-Type: text/csv\r\n\r\n"+csv+"\r\n--"+boundary+"--\r\n";
             var imported=http.send(HttpRequest.newBuilder(URI.create(base+"/catalog/imports")).header("X-Swapy-Token",token).header("Content-Type","multipart/form-data; boundary="+boundary).POST(HttpRequest.BodyPublishers.ofString(multipart)).build(),HttpResponse.BodyHandlers.ofString());
             assertThat(imported.statusCode()).isEqualTo(200);assertThat(Json.object(imported.body()).get("version")).isEqualTo(1);
+            var summary=http.send(HttpRequest.newBuilder(URI.create(base+"/catalog/summary")).GET().build(),HttpResponse.BodyHandlers.ofString());
+            assertThat(summary.statusCode()).isEqualTo(200);assertThat(Json.object(summary.body())).doesNotContainKeys("pool","sensitive");assertThat(summary.body().length()).isLessThan(2000);
+            var unchangedSummary=http.send(HttpRequest.newBuilder(URI.create(base+"/catalog/summary")).header("If-None-Match",summary.headers().firstValue("ETag").orElseThrow()).GET().build(),HttpResponse.BodyHandlers.ofString());
+            assertThat(unchangedSummary.statusCode()).isEqualTo(304);
+            var page=http.send(HttpRequest.newBuilder(URI.create(base+"/catalog/entries?kind=pool&language=zh&pageSize=1")).GET().build(),HttpResponse.BodyHandlers.ofString());
+            assertThat(page.statusCode()).isEqualTo(200);assertThat((List<?>)Json.object(page.body()).get("items")).hasSize(1);
         }
     }
     @Test void realHttpRequiresSameOriginTokenAndScansSelectedDirectory() throws Exception {
