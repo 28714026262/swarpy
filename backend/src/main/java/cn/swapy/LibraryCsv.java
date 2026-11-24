@@ -13,6 +13,7 @@ public final class LibraryCsv {
             row(out,List.of(kind,w.id(),w.word(),w.pos(),w.form(),w.role(),w.source(),w.status(),String.valueOf(w.introducedVersion()),w.family()==null?"\\N":w.family().startsWith("\\")?"\\"+w.family():w.family()));
         if(java.util.stream.Stream.concat(library.sensitive().stream(),library.pool().stream()).anyMatch(w->w.source().startsWith("jieba:")))notice(out,"jieba-MIT","/jieba-LICENSE.txt");
         if(java.util.stream.Stream.concat(library.sensitive().stream(),library.pool().stream()).anyMatch(w->w.source().equals("WordNet:3.0")))notice(out,"WordNet-3.0","/wordnet-LICENSE.txt");
+        if(java.util.stream.Stream.concat(library.sensitive().stream(),library.pool().stream()).anyMatch(w->w.source().startsWith("LemmInflect:")))notice(out,"LemmInflect-MIT","/lemminflect-LICENSE.txt");
         return out.toString().getBytes(StandardCharsets.UTF_8);
     }
     public static Catalog.Library decode(byte[] data) {
@@ -24,7 +25,7 @@ public final class LibraryCsv {
             var sensitive=new ArrayList<Catalog.Word>();var pool=new ArrayList<Catalog.Word>();
             for(int i=2;i<rows.size();i++) {
                 var r=rows.get(i);if(r.size()==1&&r.get(0).isEmpty())continue;
-                if(r.size()==3&&r.get(0).equals("license")&&Set.of("jieba-MIT","WordNet-3.0").contains(r.get(1))&&!r.get(2).isBlank())continue;
+                if(r.size()==3&&r.get(0).equals("license")&&Set.of("jieba-MIT","WordNet-3.0","LemmInflect-MIT").contains(r.get(1))&&!r.get(2).isBlank())continue;
                 if(r.size()!=10||!Set.of("pool","sensitive").contains(r.get(0)))throw new IllegalArgumentException();
                 String family=r.get(9).equals("\\N")?null:r.get(9).startsWith("\\\\")?r.get(9).substring(1):r.get(9);
                 var word=new Catalog.Word(r.get(1),r.get(2),r.get(3),r.get(4),r.get(5),r.get(6),r.get(7),Integer.parseInt(r.get(8)),family);

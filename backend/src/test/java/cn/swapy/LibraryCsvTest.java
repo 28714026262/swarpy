@@ -6,6 +6,13 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.*;
 
 class LibraryCsvTest {
+    @Test void inflectionNoticeIsRetainedOnExportAndReimport() {
+        var word=new Catalog.Word("R_inf","made","动词","英文过去分词","通用词","LemmInflect:b7699808106a","启用",1,"");
+        var library=new Catalog.Library("swapy-library",1,"test",1,List.of(),List.of(word));
+        byte[] data=LibraryCsv.encode(library);
+        assertThat(new String(data,StandardCharsets.UTF_8)).contains("license,LemmInflect-MIT,").contains("2019 Brad Jascob");
+        assertThat(LibraryCsv.decode(data)).isEqualTo(library);
+    }
     @Test void sourceNoticesTravelWithTheSingleCsv() {
         var word=new Catalog.Word("R_1","revise","动词","英文词","通用词","WordNet:3.0","启用",1,"");
         var library=new Catalog.Library("swapy-library",1,"test",1,List.of(),List.of(word));

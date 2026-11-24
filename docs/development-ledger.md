@@ -71,3 +71,20 @@ Final: deferred 前端快速交替筛选／迟到响应的自动化回归 — �
 Final: Ruling: 英文词义和词性未全量人工审核；四个通用词词性各600不等于每个字母长度600，候选不足明确报告。旧客户端不能处理许可行不在本轮基础版兼容范围。
 
 完整Maven verify 60项通过，数据10项通过，浏览器英文＋动词600条、CREATE查create、清空恢复及控制台检查通过。正式升级前备份before-english-query-20261124-143647.db，兼容导入HTTP200，正式CSV导出与发布文件SHA256一致，隔离服务及浏览器已关闭。查询验证详见basic-csv-verification.md。
+
+## 英文名称、词形与多词性（2026-11-24）
+
+授权：用户批准补英文人名／地点、常用词形及同词多词性。沿用既定Java／SQLite／CSV和不逐项提问的执行方式。使用writing-plans、TDD及executing-plans流程，独立只读basic_csv_review做一次最终审查。
+
+StoreTest.poolSupportsMultiplePosButSensitiveSurfacesStayUnambiguous先因AMBIGUOUS_WORD失败，再将pool启用唯一键扩为词面＋POS＋form＋标准role；敏感词仍按词面唯一。MappingEngine不改变分配规则，新增跨词性候选同词面只分配一次及过去式不混现在分词的往返回归。LibraryCsvTest.inflectionNoticeIsRetainedOnExportAndReimport先失败后增加LemmInflect来源许可往返。
+
+生成器保留原30,600条ID及属性，V3新增中性合成人名、地点、固定词形词典候选及多词性补齐。数据三项新增需求用例先失败后通过。初稿名称只列偶数长度，审核将其评为Important；新增连续长度测试观察失败，再补7–22每个长度各600条。最终52,993条、88个组合，数据14项通过。
+
+Final: fixed 名称奇数长度无候选 — test_english_names_cover_contiguous_common_lengths RED→GREEN，数据14/14。
+Final: Ruling: 词形与合成名称未全量人工审校 — 使用固定带标签词形词典和overrides，保留来源许可与校验；不声称任意语境自然，若源标注有误需追加弃用修订。
+Final: Ruling: 来源许可适用范围未作法律判断 — 保留上游原许可及来源信息，不增写法律保证；如业务分发有额外合规要求需另核对。
+Final: Ruling: 审核未等候父任务最终测试 — 不将审核意见当测试结果，实际读取64项Java测试、14项数据测试及隔离文件往返结果作为证据。
+
+Java测试64/64通过；正式服务持有JAR导致repackage失败，停止空闲服务后package成功，未改动Java代码无需重复测试。隔离浏览器V3导入、词形选择通过；四项敏感词真实自然平替及65字节还原完全一致。正常升级前备份before-english-completion-20261124-150039.db，正式导入HTTP200，导出与发布文件SHA一致。正式敏感词0，测试任务仅在隔离目录，隔离服务关闭。
+
+边界：人名／地点本轮明确覆盖7–22字母；普通英文词仍按相同字母数筛选，不保证每长度600。敏感词需显式选择词性与形态，不自动语境消歧或基础词变形扩展。逐字母大小写保持以支持无损还原，词界不同的英文合成名称可能出现非标准内部大写。

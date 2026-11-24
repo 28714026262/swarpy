@@ -43,6 +43,18 @@ class StoreTest {
                     List.of(),List.of()))).hasMessageContaining("DOWNGRADE");
         }
     }
+    @Test void poolSupportsMultiplePosButSensitiveSurfacesStayUnambiguous() {
+        try(Store db=new Store(temp)) {
+            var catalog=new Catalog(db);
+            catalog.add("pool","record","名词","英文词","通用词","");
+            catalog.add("pool","record","动词","英文词","通用词","");
+            assertThat(catalog.snapshot().pool()).hasSize(2);
+            assertThatThrownBy(()->catalog.add("pool","RECORD","动词","英文词","通用词","")).hasMessageContaining("AMBIGUOUS_WORD");
+            catalog.add("sensitive","record","名词","英文词","通用词","");
+            assertThatThrownBy(()->catalog.add("sensitive","Record","动词","英文词","通用词","")).hasMessageContaining("AMBIGUOUS_WORD");
+            assertThat(catalog.snapshot().sensitive()).hasSize(1);
+        }
+    }
     @Test void pathsRejectTraversalAndResolveUnicodeFiles() throws Exception {
         Path root = Files.createDirectory(temp.resolve("资料"));
         Files.writeString(root.resolve("说明.md"),"文字");

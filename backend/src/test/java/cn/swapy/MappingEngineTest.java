@@ -7,6 +7,23 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.*;
 
 class MappingEngineTest {
+    @Test void multiPosCandidatesStillAssignEachSurfaceOnlyOnce() {
+        var noun=new Catalog.Word("S_n","record","名词","英文词","通用词","手填","启用",1,"");
+        var verb=new Catalog.Word("S_v","change","动词","英文词","通用词","手填","启用",1,"");
+        var pn=new Catalog.Word("R_n","travel","名词","英文词","通用词","词库","启用",1,"");
+        var pv=new Catalog.Word("R_v","travel","动词","英文词","通用词","词库","启用",1,"");
+        var engine=new MappingEngine();var plan=engine.plan(List.of("RECORD Change"),library(List.of(noun,verb),List.of(pn,pv)));
+        assertThat(plan.mappings()).hasSize(1);assertThat(plan.skipped()).hasSize(1);
+        assertThat(engine.restore(engine.redact("RECORD Change",plan.mappings(),"B","K_multi"),plan.mappings(),"K_multi")).isEqualTo("RECORD Change");
+    }
+    @Test void inflectionFormsNeverMixPastWithPresent() {
+        var source=new Catalog.Word("S_p","created","动词","英文过去式","通用词","手填","启用",1,"");
+        var target=new Catalog.Word("R_p","changed","动词","英文过去式","通用词","词库","启用",1,"");
+        var wrong=new Catalog.Word("R_i","finding","动词","英文现在分词","通用词","词库","启用",1,"");
+        var engine=new MappingEngine();var plan=engine.plan(List.of("CREATED Created recreated"),library(List.of(source),List.of(wrong,target)));
+        assertThat(plan.mappings()).extracting(MappingEngine.Mapping::replacement).containsExactly("changed");
+        assertThat(engine.restore(engine.redact("CREATED Created recreated",plan.mappings(),"B","K_past"),plan.mappings(),"K_past")).isEqualTo("CREATED Created recreated");
+    }
     @Test void englishVerbsUseWholeWordsAndKeepOriginalCase() {
         var source=new Catalog.Word("S_en","create","动词","英文词","通用词","手填","启用",1,"");
         var target=new Catalog.Word("R_en","revise","动词","英文词","通用词","词库","启用",1,"");

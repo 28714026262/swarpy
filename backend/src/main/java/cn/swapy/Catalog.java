@@ -53,7 +53,7 @@ public final class Catalog {
                         || !List.of("启用","弃用").contains(w.status()) || w.introducedVersion()<1 || w.introducedVersion()>incoming.version())
                     throw new Problem("INVALID_WORD");
                 if(!seen.add(w.id())) throw new Problem("ID_CONFLICT",w.id());
-                if(w.active() && !enabled.add(kind+":"+w.word().toLowerCase(Locale.ROOT))) throw new Problem("AMBIGUOUS_WORD",w.word());
+                if(w.active() && !enabled.add(Json.write(kind.equals("pool")?List.of(kind,w.word().toLowerCase(Locale.ROOT),w.pos(),w.form(),WordTypes.role(w.role(),w.form())):List.of(kind,w.word().toLowerCase(Locale.ROOT))))) throw new Problem("AMBIGUOUS_WORD",w.word());
                 Word previous=existing.get(w.id());
                 if(previous!=null) {
                     if(!sameIdentity(previous,w) || old.sensitive().contains(previous)!=kind.equals("sensitive")) throw new Problem("ID_CONFLICT",w.id());
