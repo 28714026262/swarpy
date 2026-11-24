@@ -127,3 +127,17 @@ Final: Ruling: 审核没有重跑全部测试或浏览器 — 以父任务17项�
 正式兼容升级前备份data/backups/before-electronic-warfare-20261124-153939.db，不重建库。后续端到端与导出校验记录见basic-csv-verification.md。
 
 正式完成：V5兼容导入HTTP200，pool54,213／sensitive540，正式导出与发布文件SHA相同。隔离扫描、脱敏后0敏感命中、340字节还原完全相同；new normal stays.原样，源文件不变。正式浏览器540条及英文短语选择通过，无测试词保存，无控制台错误。隔离服务关闭，正式4175运行。
+
+## Windows 一键安装发布（2026-11-24）
+
+用户授权推送并发布 GitHub Release；最新明确“先不做LibreOffice”。最终范围为 Windows 10/11 x64 安装 EXE 与便携 ZIP，随包 Temurin17、SQLite、本地前端、固定 V5 词库；不打包办公转换引擎及额外微软运行库。RTF/ODT 缺少引擎明确报告，旧 DOC 沿用报错。安装版数据外置 LocalAppData，便携版自身 data。首次空库才导入，已有任务和库保留。
+
+隔离 Maven verify 实际 66 项全部通过；打包使用独立 release-build，未替换正式4175的 JAR。Java归档与 NSIS 固定 SHA 校验后每次重新提取，许可证保留，Release 提供对应 OpenJDK 源码。发布需干净提交、远端 main 一致及绑定具体 EXE/ZIP 哈希的真实烟测证据。
+
+一次独立 basic_csv_review 已完成。Final: fixed 未验证草稿额外资产可能公开 — 测试RED→GREEN，发布前精确比较资产集合。Final: fixed 原文复制可误算脱敏成功 — RED→GREEN，烟测要求有效映射、实际文字改变、无示例敏感词和还原一致。Final: fixed 自定义运行时目录可能伪造来源 — 删除覆盖参数，固定归档重新提取并检查实际 Temurin 身份。
+
+Final: fixed 安装解压错误被忽略 — 实际 NSIS 故障注入先复现退出0及完成标记，再增加错误分支，测试GREEN；按影响从Minor提高为Important。Final: fixed 缺少真实升级验证 — 按数据保留要求从Minor提高为Important，烟测在旧服务运行时重装并验证新PID、V6及任务保留。审核未运行完整包和全套测试，以父任务实测为准。
+
+核心候选包实测通过安装、随包Java、V5初始化、MD/DOCX/JSON/SQL实际脱敏还原、缺失引擎报告、重启、运行中重装及卸载保留数据。便携中文路径发现 WinPS5 对无 charset JSON 的默认解码问题；新增真实 WinPS5 中文路径用例先失败，再对 start/launch 显式UTF8解码。初始SQL样例使用解析器不接受的未引用sample标识，按明确方言错误处理；成功样例采用records并覆盖字段定义与引用。
+
+最终精确资产验收与远端校验结果由 `dist/qa-*/result.json` 和 `dist/build-*/github-release.json` 记录，发布脚本不接受缺少证明或哈希不匹配的包。完整方法见 windows-release-verification.md；历史Chrome/Edge80及全新Windows镜像未实测。

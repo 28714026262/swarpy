@@ -13,4 +13,5 @@ $taskParents=@([int]$taskState.pid)
 while($taskParents.Count -gt 0){$taskChildren=@($taskCandidates | Where-Object {$taskParents -contains [int]$_.ParentProcessId});$taskParents=@($taskChildren | ForEach-Object {[int]$_.ProcessId});foreach($taskChild in $taskParents){$taskDescendants.Add($taskChild)}}
 for($taskIndex=$taskDescendants.Count-1;$taskIndex -ge 0;$taskIndex--){Stop-Process -Id $taskDescendants[$taskIndex] -ErrorAction SilentlyContinue}
 Stop-Process -Id $taskState.pid -ErrorAction SilentlyContinue
+Wait-Process -Id $taskState.pid -Timeout 15 -ErrorAction SilentlyContinue
 Write-Output '服务已停止；扫描断点将在下次启动时读取。'

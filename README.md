@@ -4,6 +4,14 @@
 
 仓库名为 `swarpy`，产品名为 Swapy。当前为可运行首版，复杂格式和版式仍需实际业务文档验收。
 
+## Windows 一键安装版
+
+在 [GitHub Releases](https://github.com/28714026262/swarpy/releases/latest) 下载安装 EXE，双击安装后自动启动。便携版 ZIP 完整解压后双击 `Start Swapy.cmd`。
+内置 Java 17、SQLite、本地前端及词库，无需另装 JDK、Maven、Node.js、Python 或 Docker。本次 Windows 包不包含 LibreOffice，RTF/ODT 缺少转换引擎时明确报错。
+
+安装版任务数据保存在 `%LOCALAPPDATA%\Swapy\data`，升级与卸载保留；便携版保存在自身 `data` 目录。首次启动只初始化空词库，现有词库与任务不覆盖。
+停止后台服务使用 `Stop Swapy.cmd`。详细说明见[随包使用说明](docs/windows-release-readme.txt)及[发行说明](docs/release-v0.1.0.md)。
+
 ## 功能
 
 - **扫描**：先选择文件或目录，再点击开始；显示步骤与进度，仅列命中和异常项，支持暂停、继续、服务重启后的文件级断点及完整重扫。
@@ -102,7 +110,9 @@ docker compose -f compose.java.yaml config --quiet
 
 最近完整回归 **66 项通过，无失败、无跳过**，覆盖真实临时 SQLite、格式处理、映射往返、扫描恢复、包导入原子性、Git 适配和 HTTP 接口。浏览器已验证选择不执行、点击开始才创建扫描、旧 DOC 报告及基本脱敏还原流程；不等同于全部业务文档版式保证。
 
-Windows 发行目录：`./scripts/package.ps1`；可用 `-RuntimeHome <可分发JDK目录>` 生成随包运行时，未指定则依赖系统 Java 17。分发第三方组件须遵守相应许可证。
+Windows 发行包：`./scripts/package.ps1`。构建机需要 JDK17、Maven 和 PowerShell7；脚本校验并准备固定版本的可分发 Java 运行时、NSIS 及公开词库，生成安装 EXE、便携 ZIP、校验清单和构建元数据。构建输出与测试位于独立目录，不覆盖正在运行的开发版 JAR。使用 `-UseVerifiedJar` 可复用来源和 JAR 哈希均未变化的已验证构建。
+
+发布流程、验证及第三方来源见[Windows 发布方案](docs/superpowers/plans/2026-11-24-windows-release.md)、[真实包验证说明](docs/windows-release-verification.md)和[第三方来源](docs/third-party-sources.md)。安装后的运行不需要构建工具。
 
 ```text
 backend/      Java 后端、SQLite、格式适配与测试

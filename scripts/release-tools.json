@@ -1,0 +1,27 @@
+{
+  "runtime": {
+    "version": "17.0.21.1+2",
+    "archive": "temurin-jre17.zip",
+    "folder": "jre/jdk-17.0.21.1+2-jre",
+    "url": "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.21.1%2B2/OpenJDK17U-jre_x64_windows_hotspot_17.0.21.1_2.zip",
+    "sha256": "739d8f2fd286dc2736d55cc8c9260980baefd275ad48cda242335bb0f08e0795",
+    "source": "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.21.1%2B2/OpenJDK17U-jdk-sources_17.0.21.1_2.tar.gz",
+    "sourceSha256": "8f1f079f28e006318c4f79f0736dbc1300cb4a07f8b7e3ff4d8efc3ef914ea73"
+  },
+  "library": {
+    "version": 5,
+    "poolCount": 54213,
+    "sensitiveCount": 540,
+    "commit": "63b03bfaab456faff18aea526e37659dd9acd379",
+    "url": "https://raw.githubusercontent.com/28714026262/SwarpyDB/63b03bfaab456faff18aea526e37659dd9acd379/releases/swapy-basic.csv",
+    "sha256": "eb2fc85a28714aa3e23b4066403ca8121ac564f04eb8058f1d880fac20cc94ff"
+  },
+  "nsis": {
+    "version": "3.13",
+    "archive": "nsis.zip",
+    "folder": "nsis/nsis-3.13",
+    "url": "https://downloads.sourceforge.net/project/nsis/NSIS%203/3.13/nsis-3.13.zip",
+    "sha256": "ba63dffc4410ee89193e1cb5a41989991bd77c61068da17e3156d136b7b0b3d8",
+    "source": "https://sourceforge.net/projects/nsis/files/NSIS%203/3.13/"
+  }
+}

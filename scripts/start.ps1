@@ -1,5 +1,10 @@
-param([int]$Port = 4175, [switch]$NoBrowser)
+﻿param([int]$Port = 4175, [switch]$NoBrowser)
 $ErrorActionPreference = 'Stop'
+function Get-SwapyJson {
+    param([string]$Uri,[int]$TimeoutSec=10)
+    $taskHttp=Invoke-WebRequest -Uri $Uri -TimeoutSec $TimeoutSec -UseBasicParsing
+    [Text.Encoding]::UTF8.GetString($taskHttp.RawContentStream.ToArray()) | ConvertFrom-Json
+}
 $taskRoot = Split-Path -Parent $PSScriptRoot
 $taskJar = Join-Path $taskRoot 'swapy.jar'
 if (-not (Test-Path -LiteralPath $taskJar)) { $taskJar = Join-Path $taskRoot 'backend/target/swapy-0.1.0.jar' }
@@ -14,7 +19,7 @@ if ($env:SWAPY_DATA) { $taskData = [IO.Path]::GetFullPath($env:SWAPY_DATA) }
 New-Item -ItemType Directory -Path $taskData -Force | Out-Null
 $taskUrl = "http://127.0.0.1:$Port/"
 $taskReady = $false
-try { $taskSession = Invoke-RestMethod -Uri ($taskUrl+'api/v1/session') -TimeoutSec 2; $taskReady = $taskSession.backend -eq 'java-sqlite' } catch {}
+try { $taskSession = Get-SwapyJson -Uri ($taskUrl+'api/v1/session') -TimeoutSec 2; $taskReady = $taskSession.backend -eq 'java-sqlite' } catch {}
 if($taskReady -and $taskSession.dataDirectory -and -not [StringComparer]::OrdinalIgnoreCase.Equals([IO.Path]::GetFullPath($taskSession.dataDirectory),[IO.Path]::GetFullPath($taskData))){throw '该端口正在运行另一个Swapy数据实例，请更换Port。'}
 if (-not $taskReady) {
     $taskArguments = @('-Xmx1536m','-XX:ActiveProcessorCount=4','-Dfile.encoding=UTF-8','-jar',('"'+$taskJar+'"'),"--server.port=$Port",('"--swapy.data='+$taskData+'"'))
@@ -22,7 +27,7 @@ if (-not $taskReady) {
     @{pid=$taskProcess.Id;jar=$taskJar;data=$taskData;port=$Port} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $taskData 'service.json') -Encoding UTF8
     for ($taskAttempt=0; $taskAttempt -lt 60; $taskAttempt++) {
         if ($taskProcess.HasExited) { throw "服务启动失败，请查看 $taskData/service-error.log" }
-        try { $taskSession=Invoke-RestMethod -Uri ($taskUrl+'api/v1/session') -TimeoutSec 1; if ($taskSession.backend -eq 'java-sqlite') { $taskReady=$true;break } } catch {}
+        try { $taskSession=Get-SwapyJson -Uri ($taskUrl+'api/v1/session') -TimeoutSec 1; if ($taskSession.backend -eq 'java-sqlite') { $taskReady=$true;break } } catch {}
         Start-Sleep -Milliseconds 500
     }
 }
