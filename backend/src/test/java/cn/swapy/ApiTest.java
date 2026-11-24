@@ -32,6 +32,15 @@ class ApiTest {
             String next=changed.headers().firstValue("ETag").orElse("");assertThat(next).isNotEqualTo(tag);
             var cached=http.send(HttpRequest.newBuilder(uri).header("If-None-Match","W/"+next).GET().build(),HttpResponse.BodyHandlers.ofString());
             assertThat(cached.statusCode()).isEqualTo(304);assertThat(cached.body()).isEmpty();
+            var exported=http.send(HttpRequest.newBuilder(URI.create(base+"/catalog/exports")).header("X-Swapy-Token",token).POST(HttpRequest.BodyPublishers.ofString("{}")).build(),HttpResponse.BodyHandlers.ofByteArray());
+            assertThat(exported.statusCode()).isEqualTo(200);assertThat(exported.headers().firstValue("Content-Disposition").orElse("")).contains(".csv");
+            assertThat(LibraryCsv.decode(exported.body()).pool()).extracting(Catalog.Word::word).containsExactly("林舟");
+            var direct=http.send(HttpRequest.newBuilder(URI.create(base+"/catalog/export.csv")).GET().build(),HttpResponse.BodyHandlers.ofByteArray());
+            assertThat(direct.statusCode()).isEqualTo(200);assertThat(direct.body()).isEqualTo(exported.body());
+            String boundary="SwapyCsvBoundary",csv=new String(exported.body(),java.nio.charset.StandardCharsets.UTF_8);
+            String multipart="--"+boundary+"\r\nContent-Disposition: form-data; name=\"file\"; filename=\"library.csv\"\r\nContent-Type: text/csv\r\n\r\n"+csv+"\r\n--"+boundary+"--\r\n";
+            var imported=http.send(HttpRequest.newBuilder(URI.create(base+"/catalog/imports")).header("X-Swapy-Token",token).header("Content-Type","multipart/form-data; boundary="+boundary).POST(HttpRequest.BodyPublishers.ofString(multipart)).build(),HttpResponse.BodyHandlers.ofString());
+            assertThat(imported.statusCode()).isEqualTo(200);assertThat(Json.object(imported.body()).get("version")).isEqualTo(1);
         }
     }
     @Test void realHttpRequiresSameOriginTokenAndScansSelectedDirectory() throws Exception {

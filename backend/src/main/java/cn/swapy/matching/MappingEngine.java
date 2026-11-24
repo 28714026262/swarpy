@@ -44,9 +44,7 @@ public final class MappingEngine {
     }
     private static java.util.stream.Stream<String> stream(Iterable<String> texts){return java.util.stream.StreamSupport.stream(texts.spliterator(),false);}
     private boolean compatible(Word a,Word b) {
-        return a.pos().equals(b.pos()) && a.role().equals(b.role()) && a.form().equals(b.form())
-                && (a.family()==null || a.family().isBlank() || !a.family().equals(b.family()))
-                && (!Matcher.english(a) || asciiLetterCount(a.word())==asciiLetterCount(b.word()));
+        return cn.swapy.WordTypes.compatible(a,b);
     }
     private static long asciiLetterCount(String text) {return text.chars().filter(c->c>='A'&&c<='Z'||c>='a'&&c<='z').count();}
     private static boolean letter(char c) {return c>='A'&&c<='Z'||c>='a'&&c<='z';}

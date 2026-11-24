@@ -123,7 +123,7 @@ public final class PackageService {
             var m=object(value);var a=sources.get(m.get("source_id"));var b=targets.get(m.get("replacement_id"));if(a==null||b==null)throw new Problem("INVALID_MAPPING_REFERENCE");
             int actual=Math.max(a.introducedVersion(),b.introducedVersion());
             if(actual>minimum||actual!=integer(m.get("introduced_version")))throw new Problem("INVALID_MAPPING_VERSION");
-            if(!a.form().equals(b.form())||!a.role().equals(b.role())||!a.pos().equals(b.pos())||!a.form().equals(m.get("form"))||!a.role().equals(m.get("role"))
+            if(!cn.swapy.WordTypes.compatible(a,b)||!a.form().equals(m.get("form"))||!a.role().equals(m.get("role"))
                     ||!originals.add(a.word().toLowerCase(Locale.ROOT))||!replacements.add(b.word().toLowerCase(Locale.ROOT)))throw new Problem("INVALID_MAPPING_REFERENCE");
             result.add(new MappingEngine.Mapping(a.id(),b.id(),a.word(),b.word(),a.form(),a.role(),integer(m.get("ordinal")),actual));
         }

@@ -10,7 +10,16 @@ public final class Matcher {
     public static boolean english(Word word) {return word.form().contains("英文") || word.form().contains("数字");}
     public static Pattern pattern(Word word) {
         String expression=Pattern.quote(word.word());
-        return english(word) ? Pattern.compile("(?<![A-Za-z0-9_])"+expression+"(?![A-Za-z0-9_])",Pattern.CASE_INSENSITIVE) : Pattern.compile(expression);
+        boolean bounded=english(word)||Set.of("日期","时刻","数量","金额","比例","电话","邮箱","IPv4","网址").contains(word.form());
+        String before="(?<![A-Za-z0-9_])",after="(?![A-Za-z0-9_])";
+        switch(word.form()) {
+            case "数量","金额","比例" -> {before+="(?<![0-9][.,])";after+="(?![.,][0-9])";}
+            case "时刻" -> {before+="(?<![0-9]:)";after+="(?!:[0-9])";}
+            case "IPv4" -> {before+="(?<![A-Za-z0-9_]\\.)";after+="(?!\\.[A-Za-z0-9_])";}
+            case "邮箱" -> {before="(?<![A-Za-z0-9_@%+\\-])(?<![A-Za-z0-9_.%+\\-]\\.)";after="(?![A-Za-z0-9_@%+\\-])(?!\\.[A-Za-z0-9_\\-])";}
+            case "网址" -> {before="(?<![A-Za-z0-9_@:/?=&%+#~\\-])(?<![A-Za-z0-9_]\\.)";after="(?![A-Za-z0-9_@:/?=&%+#~\\-])(?!\\.[A-Za-z0-9_/])";}
+        }
+        return bounded?Pattern.compile(before+expression+after,english(word)?Pattern.CASE_INSENSITIVE:0):Pattern.compile(expression);
     }
     public static List<Hit> all(String text,List<Word> words) {
         var hits=new ArrayList<Hit>();

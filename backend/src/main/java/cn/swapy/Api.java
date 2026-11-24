@@ -45,11 +45,12 @@ public class Api {
         return ResponseEntity.ok().eTag(catalogTag(Json.write(List.of(library.lineage(),library.version())))).body(body);
     }
     private String catalogTag(String revision){return "\""+PackageService.sha((revision+":"+git.publisher).getBytes(StandardCharsets.UTF_8))+"\"";}
-    @PostMapping("/catalog/entries") public Object add(@RequestBody Map<String,String> entry){return git.add(entry.get("kind"),entry.get("word"),entry.getOrDefault("pos","专有名词"),entry.getOrDefault("form","中文词"),entry.get("role"),entry.getOrDefault("family",""));}
+    @PostMapping("/catalog/entries") public Object add(@RequestBody Map<String,String> entry){return git.add(entry.get("kind"),entry.get("word"),entry.getOrDefault("pos","专有名词"),entry.getOrDefault("form","中文词"),WordTypes.role(entry.get("role"),entry.getOrDefault("form","中文词")),entry.getOrDefault("family",""));}
     @PostMapping("/catalog/entries/{id}/deprecations") public Object deprecate(@PathVariable String id){return git.deprecate(id);}
     @PostMapping("/catalog/sync-jobs") public Object syncCatalog(){git.retryPending();return git.sync();}
-    @PostMapping("/catalog/imports") public Object importLibrary(@RequestParam MultipartFile file) throws Exception {return git.importLibrary(Json.read(new String(file.getBytes(),StandardCharsets.UTF_8),Catalog.Library.class));}
-    @PostMapping("/catalog/exports") public ResponseEntity<byte[]> exportLibrary(){return download("swapy-library-v"+catalog.snapshot().version()+".json",Json.write(catalog.snapshot()).getBytes(StandardCharsets.UTF_8),"application/json");}
+    @PostMapping("/catalog/imports") public Object importLibrary(@RequestParam MultipartFile file) throws Exception {return git.importLibrary(file.getOriginalFilename()!=null&&file.getOriginalFilename().toLowerCase(Locale.ROOT).endsWith(".csv")?LibraryCsv.decode(file.getBytes()):Json.read(new String(file.getBytes(),StandardCharsets.UTF_8),Catalog.Library.class));}
+    @PostMapping("/catalog/exports") public ResponseEntity<byte[]> exportLibrary(){var library=catalog.snapshot();return download("swapy-library-v"+library.version()+".csv",LibraryCsv.encode(library),"text/csv;charset=UTF-8");}
+    @GetMapping("/catalog/export.csv") public ResponseEntity<byte[]> exportCsvDownload(){return exportLibrary();}
     @PostMapping("/task-package-imports") public Object importPackages(@RequestParam MultipartFile file) throws Exception {return Map.of("taskIds",packages.importPackages(file.getBytes()));}
     @PostMapping("/task-package-exports") public ResponseEntity<byte[]> exportPackages(@RequestBody Map<String,Object> request) {
         boolean all="all_ready".equals(request.get("scope"));List<String> ids=all?List.of():((List<?>)request.getOrDefault("task_ids",List.of())).stream().map(String::valueOf).toList();
