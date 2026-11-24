@@ -55,3 +55,15 @@
 隔离输入演示.md包含中文组织／设施／装备／动作／标识，以及RECONNAISSANCE、DEPLOYED、missile、patrol、unit_code、call_sign、ISR、UAV。实际扫描成功，命中报告非空；自然脱敏结果对全部360启用敏感模式复查为0命中，通过任务ID解析还原后240字节与输入完全相同，源文件不变。测试任务与输入只存在忽略的.qa目录，隔离服务已关闭。
 
 正式备份before-military-sensitive-20261124-152428.db后使用兼容导入，HTTP200、V4、pool53,013、sensitive360。正式导出与发布CSV SHA相同。浏览器词库页显示360条，搜索侦察得到5条，属性及启用状态可读，无控制台错误；自动化浏览器已关闭。正式服务4175保持运行，无正式测试任务。
+
+## 电子战增量 V5（2026-11-24）
+
+seeds/electronic-warfare.csv追加180条（中文103、英文77），总敏感库540；pool由53,013增加至54,213。新增两字母英文缩写600候选，以及英文短语600个中性名词短语候选；当前90个属性组合至少600。全部旧pool53,013及sensitive360逐字段保持，新记录introducedVersion均5。主CSV6,603,855字节，SHA256：eb2fc85a28714aa3e23b4066403ca8121ac564f04eb8058f1d880fac20cc94ff。
+
+新电子战覆盖测试先因缺词失败，生成后数据17项全部通过；稳定重建、许可往返及540项静态候选审计均通过。node --check通过，Maven package成功。本轮Java引擎没有修改，不重复上轮66项已通过测试；通过实际文件验证新形态。
+
+隔离演示.md包含电子战分队、侦察站、电子战系统、电子侦察、电磁压制、抗干扰天线、干扰波形，以及ELECTRONIC WARFARE、Electronic Protection、ELECTRONIC COUNTER-COUNTERMEASURES、Radar jamming、jamming／jammer／jammed、EW／eW／ECM／ECCM／RWR／ESM、ew_mode／emitter_id。扫描与自然脱敏成功，输出对全部540启用敏感模式检查0命中；new normal stays.保持不变。通过任务ID还原后340字节完全一致，源文件未改，隔离服务关闭。
+
+正式升级前备份before-electronic-warfare-20261124-153939.db，兼容导入HTTP200、V5、pool54,213／sensitive540。导出与发布CSV SHA一致，浏览器显示540条；新增词条对话框可选择英文短语，未保存测试词，无控制台错误，浏览器已关闭。正式4175继续运行。
+
+独立只读审核无阻断问题；保留一项Minor：ES／EA／EP等跨语境误报，README明确可按需弃用。短语保持字面空格与连字符，不自动归一排版变体，不声称完备专业词典或语境消歧。
