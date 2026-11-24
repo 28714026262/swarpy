@@ -1,0 +1,10 @@
+.git
+.impeccable
+data
+**/data
+**/target
+dist
+node_modules
+*.log
+*.swapy
+.env*

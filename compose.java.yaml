@@ -1,0 +1,20 @@
+services:
+  swapy:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "127.0.0.1:4175:4175"
+    environment:
+      SWAPY_DATA: /app/data
+      SWAPY_ROOTS: /inputs
+    volumes:
+      - type: bind
+        source: ${SWAPY_INPUT_ROOT:-.}
+        target: /inputs
+        read_only: true
+      - swapy-data:/app/data
+    init: true
+    restart: unless-stopped
+volumes:
+  swapy-data:

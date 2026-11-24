@@ -1,0 +1,8 @@
+services:
+  swapy-prototype:
+    build:
+      context: ./prototype
+    ports:
+      - "127.0.0.1:4174:80"
+    init: true
+    restart: unless-stopped

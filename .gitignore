@@ -1,0 +1,28 @@
+# Local data, results and credentials
+**/data/
+/data/
+/dist/
+**/.swapy-stage/
+**/.staging/
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.swapy
+*-passwordbook.*
+.env
+.env.*
+!.env.example
+# Build and development artifacts
+**/target/
+node_modules/
+*.log
+*.log.*
+replay_pid*
+hs_err_pid*
+.impeccable/
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
