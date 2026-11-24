@@ -7,6 +7,28 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.*;
 
 class MappingEngineTest {
+    @Test void replacementsDoNotAssembleSensitiveWordsAcrossTheirBoundary() {
+        var cost=new Catalog.Word("S_cost","军费","名词","中文词","通用词","手填","启用",1,"");
+        var fire=new Catalog.Word("S_fire","火力","名词","中文词","通用词","手填","启用",1,"");
+        var unsafe=new Catalog.Word("R_u","力量","名词","中文词","通用词","词库","启用",1,"");
+        var engine=new MappingEngine();
+        assertThat(engine.plan(List.of("火军费"),library(List.of(cost,fire),List.of(unsafe))).mappings()).isEmpty();
+        var safe=new Catalog.Word("R_s","田野","名词","中文词","通用词","词库","启用",1,"");
+        var plan=engine.plan(List.of("火军费 火力"),library(List.of(cost,fire),List.of(unsafe,safe)));
+        assertThat(engine.redact("火军费 火力",plan.mappings(),"B","K_boundary")).doesNotContain("火力量");
+    }
+    @Test void replacementsNeverIntroduceAnotherEnabledSensitiveTerm() {
+        var a=new Catalog.Word("S_a","作战","名词","中文词","通用词","手填","启用",1,"");
+        var b=new Catalog.Word("S_b","军营","名词","中文词","通用词","手填","启用",1,"");
+        var blocked=new Catalog.Word("R_b","军营","名词","中文词","通用词","词库","启用",1,"");
+        var engine=new MappingEngine();var rejected=engine.plan(List.of("作战"),library(List.of(a,b),List.of(blocked)));
+        assertThat(rejected.mappings()).isEmpty();assertThat(rejected.skipped()).containsEntry("S_a","CANDIDATE_EXHAUSTED");
+        var nested=new Catalog.Word("R_c","山间军营","名词","中文词","通用词","词库","启用",1,"");
+        assertThat(engine.plan(List.of("作战"),library(List.of(a,b),List.of(nested))).mappings()).isEmpty();
+        var safe=new Catalog.Word("R_s","田野","名词","中文词","通用词","词库","启用",1,"");
+        assertThat(engine.plan(List.of("作战"),library(List.of(a,b),List.of(blocked,safe))).mappings()).extracting(MappingEngine.Mapping::replacement).containsExactly("田野");
+        assertThat(engine.plan(List.of("作战"),library(List.of(a,b.deprecated()),List.of(blocked))).mappings()).hasSize(1);
+    }
     @Test void multiPosCandidatesStillAssignEachSurfaceOnlyOnce() {
         var noun=new Catalog.Word("S_n","record","名词","英文词","通用词","手填","启用",1,"");
         var verb=new Catalog.Word("S_v","change","动词","英文词","通用词","手填","启用",1,"");

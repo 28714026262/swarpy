@@ -88,3 +88,23 @@ Final: Ruling: 审核未等候父任务最终测试 — 不将审核意见当测
 Java测试64/64通过；正式服务持有JAR导致repackage失败，停止空闲服务后package成功，未改动Java代码无需重复测试。隔离浏览器V3导入、词形选择通过；四项敏感词真实自然平替及65字节还原完全一致。正常升级前备份before-english-completion-20261124-150039.db，正式导入HTTP200，导出与发布文件SHA一致。正式敏感词0，测试任务仅在隔离目录，隔离服务关闭。
 
 边界：人名／地点本轮明确覆盖7–22字母；普通英文词仍按相同字母数筛选，不保证每长度600。敏感词需显式选择词性与形态，不自动语境消歧或基础词变形扩展。逐字母大小写保持以支持无损还原，词界不同的英文合成名称可能出现非标准内部大写。
+
+## 军事示例敏感库首批（2026-11-24）
+
+用户要求继续填充敏感库，以军事词汇为首批例子；沿用先前持续执行、正式兼容导入及两个仓库推送授权。人工整理360条（中文193／英文167），仅公开通用术语及部分英文词形、缩写、文字标识，不添加实际部队番号、坐标、人物或具体数值。词性和粗属性显式配置，不把词清单等同于涉密判定。
+
+增加种子seeds/military.csv与scripts/military.py。稳定S_UUID追加到主CSV，旧52,993个pool ID及属性逐项不变。为reconnaissance的14字母名词缺口补20个固定WordNet中性名词，主库pool53,013、sensitive360，V4。C2/C3/EW因没有相应长度候选未纳入。逐词静态候选审计覆盖全部360词，最少4个，运行时占用与边界检查仍可使候选减少。
+
+MappingEngineTest.replacementsNeverIntroduceAnotherEnabledSensitiveTerm先失败，再排除候选词面包含启用敏感词的情形（英文沿用整词边界、不区分大小写）。新增模式不改写既有映射。独立只读basic_csv_review一次审核提出跨邻接字符拼词为Important；新增replacementsDoNotAssembleSensitiveWordsAcrossTheirBoundary，观察“火军费”→“火力量”失败，再检查自然平替实际渲染中与修改跨度重叠的敏感命中。
+
+审核把生成器先覆盖release再做候选审计列为Minor。按实际失败会留下未通过校验的可导入发布文件、报告可能仍为旧版的影响，提高为Important纳入同一次修复。test_failed_candidate_audit_keeps_previous_release先因新文件覆盖旧哨兵内容失败，再将发布写入移到候选校验通过之后。最初用例因临时目录缺许可文件提前报错，已修正测试隔离后确认正确失败原因，不将无关错误当RED。
+
+Final: fixed 跨替换边界拼出敏感词 — replacementsDoNotAssembleSensitiveWordsAcrossTheirBoundary RED→GREEN，全套Java66/66。
+Final: fixed 审计失败覆盖有效CSV — test_failed_candidate_audit_keeps_previous_release RED→GREEN，数据16/16。
+Final: Ruling: 英文army/navy/battalion为通用词、中文对应词为组织名 — 英文以普通词形做低关联名词平替，具体组织全称才按名称属性；不承诺双语同词得到同类实体名，后续业务需要统一口径时通过弃用与新ID调整。
+Final: Ruling: 审核未判断术语覆盖充分性或涉密等级 — 本批明确为可审阅的示例规则，不是完备军事词典和涉密判定；若照搬到其他业务语境可能产生字面误报，应在词库页弃用相应示例。
+Final: Ruling: 审核未重跑全套验证 — 以父任务实际Maven verify 66项和Python16项通过及后续隔离文件测试作为证据，不拿审核当测试通过。
+
+正式变更前确认任务0、敏感词0，备份data/backups/before-military-sensitive-20261124-152428.db。只用正常兼容导入，不重建数据库。具体端到端结果与发布校验见basic-csv-verification.md后续记录。
+
+正式结果：兼容V4导入HTTP200，pool53,013／sensitive360，导出SHA与发布一致。浏览器360条及侦察查询5条通过；隔离扫描、自然脱敏后0敏感命中、240字节还原全部通过，源文件不变，隔离服务关闭。正式4175继续运行，未创建正式测试任务。

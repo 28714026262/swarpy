@@ -18,6 +18,7 @@ public final class MappingEngine {
 
     public Plan plan(Iterable<String> originals,Catalog.Library library) {return plan(originals,library,List.of());}
     public Plan plan(Iterable<String> originals,Catalog.Library library,List<Mapping> existing) {
+        var forbiddenTargets=library.sensitive().stream().filter(Word::active).map(Matcher::pattern).toList();
         var existingWords=existing.stream().map(m->m.original().toLowerCase(Locale.ROOT)).collect(java.util.stream.Collectors.toSet());
         List<Word> sources=new ArrayList<>(library.sensitive().stream().filter(Word::active).filter(w->!existingWords.contains(w.word().toLowerCase(Locale.ROOT))).toList());
         for(Mapping m:existing) if(sources.stream().noneMatch(w->w.id().equals(m.sourceId()))) sources.add(m.source());
@@ -30,12 +31,13 @@ public final class MappingEngine {
             var candidates=new ArrayList<>(library.pool().stream().filter(Word::active).filter(w->compatible(source,w)).toList());
             Collections.shuffle(candidates,random);boolean accepted=false;
             for(Word target:candidates) {
+                if(forbiddenTargets.stream().anyMatch(p->p.matcher(target.word()).find())) continue;
                 if(stream(originals).anyMatch(t->Matcher.pattern(target).matcher(t).find())) continue;
                 String normalized=target.word().toLowerCase(Locale.ROOT);
                 if(mappings.stream().anyMatch(m->normalized.contains(m.replacement().toLowerCase(Locale.ROOT)) || m.replacement().toLowerCase(Locale.ROOT).contains(normalized))) continue;
                 Mapping mapping=new Mapping(source.id(),target.id(),source.word(),target.word(),source.form(),source.role(),mappings.size()+1,Math.max(source.introducedVersion(),target.introducedVersion()));
                 var tentative=new ArrayList<>(mappings);tentative.add(mapping);
-                if(!stream(originals).allMatch(t->reversible(t,tentative,sources))) continue;
+                if(!stream(originals).allMatch(t->reversible(t,tentative,sources,forbiddenTargets))) continue;
                 mappings.add(mapping);accepted=true;break;
             }
             if(!accepted) skipped.put(source.id(),"CANDIDATE_EXHAUSTED");
@@ -75,8 +77,12 @@ public final class MappingEngine {
         }
         out.append(text,cursor,text.length());return new Render(out.toString(),spans);
     }
-    private boolean reversible(String text,List<Mapping> mappings,List<Word> sources) {
+    private boolean reversible(String text,List<Mapping> mappings,List<Word> sources,List<Pattern> forbiddenTargets) {
         Render rendered=render(text,mappings,sources,"B","");
+        for(Pattern pattern:forbiddenTargets) {
+            var sensitive=pattern.matcher(rendered.text());
+            while(sensitive.find()) if(rendered.spans().stream().anyMatch(s->s.start()<sensitive.end() && sensitive.start()<s.end())) return false;
+        }
         List<Matcher.Hit> all=Matcher.all(rendered.text(),mappings.stream().map(Mapping::target).toList());
         if(all.size()!=rendered.spans().size()) return false;
         var byId=new HashMap<String,Mapping>();mappings.forEach(m->byId.put(m.sourceId(),m));
