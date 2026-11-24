@@ -12,6 +12,10 @@ public final class Catalog {
     private final Store db;
     public Catalog(Store db) { this.db=db; }
     public Library snapshot() { return db.read(this::snapshot); }
+    public String revision() {
+        return db.read(c->{var rows=Store.rows(c,"SELECT lineage,version FROM catalog_releases ORDER BY version DESC LIMIT 1");
+            return rows.isEmpty()?Json.write(List.of("",0)):Json.write(List.of(rows.get(0).get("lineage"),rows.get(0).get("version")));});
+    }
     private Library snapshot(Connection c) throws Exception {
         var versions=Store.rows(c,"SELECT payload FROM catalog_releases ORDER BY version DESC LIMIT 1");
         return versions.isEmpty() ? new Library("swapy-library",1,"",0,List.of(),List.of())

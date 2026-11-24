@@ -12,6 +12,28 @@ import static org.assertj.core.api.Assertions.*;
 
 class ApiTest {
     @TempDir Path temp;
+    @Test void unchangedCatalogHasNoBodyAndChangesInvalidateItsTag() throws Exception {
+        Path source=Files.createDirectory(temp.resolve("catalog-source"));
+        try(var context=new SpringApplicationBuilder(Application.class).run("--server.port=0","--server.address=127.0.0.1",
+                "--swapy.data="+temp.resolve("catalog-data"),"--swapy.output="+temp.resolve("catalog-out"),"--swapy.roots="+source,"--spring.main.banner-mode=off")) {
+            String base="http://127.0.0.1:"+((WebServerApplicationContext)context).getWebServer().getPort()+"/api/v1";
+            var http=HttpClient.newHttpClient();var uri=URI.create(base+"/catalog");
+            var first=http.send(HttpRequest.newBuilder(uri).GET().build(),HttpResponse.BodyHandlers.ofString());
+            assertThat(first.statusCode()).isEqualTo(200);String tag=first.headers().firstValue("ETag").orElse("");assertThat(tag).isNotBlank();
+            var unchanged=http.send(HttpRequest.newBuilder(uri).header("If-None-Match",tag).GET().build(),HttpResponse.BodyHandlers.ofString());
+            assertThat(unchanged.statusCode()).isEqualTo(304);assertThat(unchanged.body()).isEmpty();
+            var session=http.send(HttpRequest.newBuilder(URI.create(base+"/session")).GET().build(),HttpResponse.BodyHandlers.ofString());
+            String token=(String)Json.object(session.body()).get("token");
+            var added=http.send(HttpRequest.newBuilder(URI.create(base+"/catalog/entries")).header("X-Swapy-Token",token).header("Content-Type","application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"kind\":\"pool\",\"word\":\"林舟\",\"role\":\"人名\"}")).build(),HttpResponse.BodyHandlers.ofString());
+            assertThat(added.statusCode()).isEqualTo(200);
+            var changed=http.send(HttpRequest.newBuilder(uri).header("If-None-Match",tag).GET().build(),HttpResponse.BodyHandlers.ofString());
+            assertThat(changed.statusCode()).isEqualTo(200);assertThat(Json.object(changed.body()).get("version")).isEqualTo(1);
+            String next=changed.headers().firstValue("ETag").orElse("");assertThat(next).isNotEqualTo(tag);
+            var cached=http.send(HttpRequest.newBuilder(uri).header("If-None-Match","W/"+next).GET().build(),HttpResponse.BodyHandlers.ofString());
+            assertThat(cached.statusCode()).isEqualTo(304);assertThat(cached.body()).isEmpty();
+        }
+    }
     @Test void realHttpRequiresSameOriginTokenAndScansSelectedDirectory() throws Exception {
         Path source=Files.createDirectory(temp.resolve("source"));Files.writeString(source.resolve("hello.md"),"正常内容");
         try(var context=new SpringApplicationBuilder(Application.class).run("--server.port=0","--server.address=127.0.0.1",

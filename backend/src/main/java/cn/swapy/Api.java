@@ -35,7 +35,16 @@ public class Api {
         if(tasks.repo.db.read(c->Store.rows(c,"SELECT id FROM artifacts WHERE task_id=? AND path=? AND state='PUBLISHED'",id,registered)).isEmpty())throw new Problem("FILE_NOT_FOUND");
         return file(selected,"application/octet-stream");
     }
-    @GetMapping("/catalog") public Object library(){var value=Json.object(Json.write(catalog.snapshot()));value.put("readOnly",!git.publisher);return value;}
+    @GetMapping("/catalog") public ResponseEntity<?> library(@RequestHeader(value="If-None-Match",required=false)String cached) {
+        String tag=catalogTag(catalog.revision());
+        if(cached!=null&&Arrays.stream(cached.split(",")).map(String::trim).map(t->t.startsWith("W/")?t.substring(2):t).anyMatch(t->t.equals(tag)||t.equals("*")))
+            return ResponseEntity.status(304).eTag(tag).build();
+        var library=catalog.snapshot();
+        var body=Map.of("format",library.format(),"formatVersion",library.formatVersion(),"lineage",library.lineage(),"version",library.version(),
+                "sensitive",library.sensitive(),"pool",library.pool(),"readOnly",!git.publisher);
+        return ResponseEntity.ok().eTag(catalogTag(Json.write(List.of(library.lineage(),library.version())))).body(body);
+    }
+    private String catalogTag(String revision){return "\""+PackageService.sha((revision+":"+git.publisher).getBytes(StandardCharsets.UTF_8))+"\"";}
     @PostMapping("/catalog/entries") public Object add(@RequestBody Map<String,String> entry){return git.add(entry.get("kind"),entry.get("word"),entry.getOrDefault("pos","专有名词"),entry.getOrDefault("form","中文词"),entry.get("role"),entry.getOrDefault("family",""));}
     @PostMapping("/catalog/entries/{id}/deprecations") public Object deprecate(@PathVariable String id){return git.deprecate(id);}
     @PostMapping("/catalog/sync-jobs") public Object syncCatalog(){git.retryPending();return git.sync();}
